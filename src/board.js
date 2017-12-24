@@ -1,4 +1,6 @@
-const buildOscillators = (ctx) => {
+import Button from "./button";
+
+const buildOscillators = (ctx, destination) => {
   const frequencies = {
     oct8: [
       4186.01, 4434.92, 4698.63, 4978.03, 5274.04, 5587.65,
@@ -12,11 +14,8 @@ const buildOscillators = (ctx) => {
   }
 
   for (let i = 0; i < 8; i++) {
-    frequencies["oct" + i] = frequencies["oct" + i].map((freq) => {
-      const temp = ctx.createOscillator();
-      temp.frequency.value = freq;
-      temp.start();
-      return temp;
+    frequencies["oct" + i] = frequencies["oct" + i].map((frequency) => {
+      return new Button({ frequency, ctx, destination });
     });
   }
   return frequencies;
@@ -26,8 +25,8 @@ class Board {
   constructor({ audioCtx }) {
     this.gainNode = audioCtx.createGain();
     this.compressor = audioCtx.createDynamicsCompressor();
-    this.oscillators = buildOscillators(audioCtx);
     const finish = audioCtx.destination;
+    this.oscillators = buildOscillators(audioCtx, finish);
     this.gainNode.connect(this.compressor);
     this.compressor.connect(finish);
     this.octave = 4;
@@ -74,9 +73,9 @@ class Board {
       octaveMod = octaveMod || 0;
       const oscillator = this.oscillators["oct" + (this.octave + octaveMod)][noteIdx];
       if (upOrDown === "down") {
-        oscillator.connect(this.gainNode);
+        oscillator.press(this.gainNode);
       } else if (upOrDown === "up") {
-        oscillator.disconnect();
+        oscillator.release();
       }
     };
   }
